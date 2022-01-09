@@ -1,7 +1,7 @@
 [package]
-name = "eframe_template"
+name = "zersis"
 version = "0.1.0"
-authors = ["Emil Ernerfeldt <emil.ernerfeldt@gmail.com>"]
+authors = ["Ridan Vandenbergh <ridanvandenbergh@gmail.com>"]
 edition = "2021"
 rust-version = "1.56"
 
