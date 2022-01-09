@@ -2,17 +2,28 @@
 #![cfg_attr(not(debug_assertions), deny(warnings))] // Forbid warnings in release builds
 #![warn(clippy::all, rust_2018_idioms)]
 
-mod app;
-mod game;
-mod input;
+use std::collections::HashSet;
+
+use eframe::egui::{Key, Ui};
+#[cfg(target_arch = "wasm32")]
+use eframe::wasm_bindgen::{self, prelude::*};
+use gilrs::Gamepad;
 
 pub use app::App;
 
+mod app;
+mod game;
+mod input;
+mod game_ui;
+mod singleplayer;
+
+trait State {
+    fn update(&mut self, keys: &HashSet<Key>, gamepad: Option<Gamepad<'_>>);
+    fn render(&mut self, ui: &mut Ui);
+}
+
 // ----------------------------------------------------------------------------
 // When compiling for web:
-
-#[cfg(target_arch = "wasm32")]
-use eframe::wasm_bindgen::{self, prelude::*};
 
 /// This is the entry-point for all the web-assembly.
 /// This is called once from the HTML.

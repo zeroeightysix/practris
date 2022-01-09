@@ -1,10 +1,8 @@
 use eframe::{egui, epi};
 use gilrs::{EventType, GamepadId, Gilrs};
-use libtetris::{Board, ColoredRow};
-use rand_pcg::Pcg64Mcg;
 
-use crate::game::{Game, GameConfig};
-use crate::input::{InputSource, UserInput};
+use crate::singleplayer::SingleplayerGame;
+use crate::State;
 
 const APP_NAME: &'static str = "zersis";
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
@@ -14,12 +12,8 @@ const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 #[cfg_attr(feature = "persistence", serde(default))] // if we add new fields, give them default values when deserializing old state
 pub struct App {
     settings_open: bool,
-
-    board: Board<ColoredRow>,
-    game: Game,
+    game: SingleplayerGame,
     #[cfg_attr(feature = "persistence", serde(skip))]
-    rng: Pcg64Mcg,
-    input: UserInput,
     gilrs: Gilrs,
     gamepad: Option<GamepadId>,
 }
@@ -57,14 +51,10 @@ impl Default for App {
             }
         });
         let gamepad = gilrs.gamepads().next().map(|(id, _)| id);
-        let mut rng = Pcg64Mcg::new(0xcafef00dd15ea5e5);
 
         Self {
             settings_open: false,
-            board: Board::new(),
-            game: Game::new(GameConfig::default(), &mut rng),
-            rng,
-            input: UserInput::default(),
+            game: SingleplayerGame::new(),
             gilrs,
             gamepad
         }
@@ -75,8 +65,11 @@ impl epi::App for App {
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::CtxRef, _frame: &epi::Frame) {
+        // continuous rendering
+        ctx.request_repaint();
+
         self.update_gamepad();
-        let controller = self.input.controller(&ctx.input().keys_down, self.gamepad.map(|id| self.gilrs.gamepad(id)));
+        self.game.update(&ctx.input().keys_down, self.gamepad.map(|id| self.gilrs.gamepad(id)));
 
         egui::TopBottomPanel::top("top_bar").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
@@ -92,16 +85,8 @@ impl epi::App for App {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            let board = &mut self.board;
-            ui.label(format!("Queue: {:?}", board.next_queue().collect::<Vec<_>>()));
-            ui.label(format!("Bag: {:?}", board.bag));
-
-            if ui.button("Add next").clicked() {
-                board.add_next_piece(board.generate_next_piece(&mut self.rng));
-            }
-
-            ui.label(format!("{:#?}", controller));
-            // render game
+            ui.label(format!("{:?}", self.game.state));
+            self.game.render(ui);
         });
 
         if self.settings_open {

@@ -1,0 +1,212 @@
+use std::collections::VecDeque;
+
+use arrayvec::ArrayVec;
+use eframe::egui::{self, *, emath::RectTransform};
+use libtetris::*;
+
+use crate::game::{*, Event};
+
+pub struct SingleplayerGameUi {
+    draw_state: GameDrawState,
+    time: u32,
+}
+
+pub struct GameDrawState {
+    board: ArrayVec<[ColoredRow; 40]>,
+    state: State,
+    statistics: Statistics,
+    garbage_queue: u32,
+    dead: bool,
+    hold_piece: Option<Piece>,
+    next_queue: VecDeque<Piece>,
+    game_time: u32,
+    combo_splash: Option<(u32, u32)>,
+    back_to_back_splash: Option<u32>,
+    clear_splash: Option<(&'static str, u32)>,
+    name: String,
+}
+
+enum State {
+    Falling(FallingPiece, FallingPiece),
+    LineClearAnimation(ArrayVec<[i32; 4]>, i32),
+    Delay,
+}
+
+impl SingleplayerGameUi {
+    pub fn new(
+        game: &Game,
+        player_name: String,
+    ) -> Self {
+        Self {
+            draw_state: GameDrawState::new(
+                game.board.next_queue(),
+                player_name
+            ),
+            time: 0,
+        }
+    }
+
+    pub fn update(
+        &mut self,
+        update: PlayerUpdate,
+    ) {
+        self.time += 1;
+        self.draw_state.update(update, self.time);
+    }
+
+    pub fn draw(&self, ui: &mut egui::Ui) {
+        self.draw_state.draw(ui);
+    }
+}
+
+impl GameDrawState {
+    pub fn new(queue: impl IntoIterator<Item=Piece>, name: String) -> Self {
+        Self::new_from_board(ArrayVec::from([*ColoredRow::EMPTY; 40]), queue, name)
+    }
+
+    pub fn new_from_board(board: ArrayVec<[ColoredRow; 40]>, queue: impl IntoIterator<Item=Piece>, name: String) -> Self {
+        Self {
+            board,
+            state: State::Delay,
+            statistics: Statistics::default(),
+            garbage_queue: 0,
+            dead: false,
+            hold_piece: None,
+            next_queue: queue.into_iter().collect(),
+            game_time: 0,
+            combo_splash: None,
+            back_to_back_splash: None,
+            clear_splash: None,
+            name,
+        }
+    }
+
+    pub fn update(
+        &mut self,
+        update: PlayerUpdate,
+        time: u32,
+    ) {
+        self.garbage_queue = update.garbage_queue;
+        self.game_time = time;
+        if let State::LineClearAnimation(_, ref mut frames) = self.state {
+            *frames += 1;
+        }
+        if let Some((_, timer)) = &mut self.combo_splash {
+            if *timer == 0 {
+                self.combo_splash = None;
+            } else {
+                *timer -= 1;
+            }
+        }
+        if let Some(timer) = &mut self.back_to_back_splash {
+            if *timer == 0 {
+                self.back_to_back_splash = None;
+            } else {
+                *timer -= 1;
+            }
+        }
+        if let Some((_, timer)) = &mut self.clear_splash {
+            if *timer == 0 {
+                self.clear_splash = None;
+            } else {
+                *timer -= 1;
+            }
+        }
+        for event in &update.events {
+            match event {
+                Event::PiecePlaced { piece, locked, .. } => {
+                    self.statistics.update(&locked);
+                    for &(x, y) in &piece.cells() {
+                        self.board[y as usize].set(x as usize, piece.kind.0.color());
+                    }
+                    if locked.cleared_lines.is_empty() {
+                        self.state = State::Delay;
+                    } else {
+                        self.state = State::LineClearAnimation(locked.cleared_lines.clone(), 0);
+                    }
+                    if locked.b2b {
+                        self.back_to_back_splash = Some(75);
+                    }
+                    let combo = locked.combo.unwrap_or(0);
+                    if combo > 0 {
+                        self.combo_splash = Some((combo, 75));
+                    }
+                    if locked.perfect_clear {
+                        self.clear_splash = Some(("Perfect Clear", 135));
+                        self.back_to_back_splash = None;
+                    } else if locked.placement_kind.is_hard() {
+                        self.clear_splash = Some((locked.placement_kind.name(), 75));
+                    }
+                }
+                Event::PieceHeld(piece) => {
+                    self.hold_piece = Some(*piece);
+                    self.state = State::Delay;
+                }
+                Event::PieceSpawned { new_in_queue } => {
+                    self.next_queue.push_back(*new_in_queue);
+                    self.next_queue.pop_front();
+                }
+                Event::PieceFalling(piece, ghost) => {
+                    self.state = State::Falling(*piece, *ghost);
+                }
+                Event::EndOfLineClearDelay => {
+                    self.state = State::Delay;
+                    self.board.retain(|row| !row.is_full());
+                    while !self.board.is_full() {
+                        self.board.push(*ColoredRow::EMPTY);
+                    }
+                }
+                Event::GarbageAdded(columns) => {
+                    self.board.truncate(40 - columns.len());
+                    for &col in columns {
+                        let mut row = *ColoredRow::EMPTY;
+                        for x in 0..10 {
+                            if x != col {
+                                row.set(x, CellColor::Garbage);
+                            }
+                        }
+                        self.board.insert(0, row);
+                    }
+                }
+                Event::GameOver => self.dead = true,
+                _ => {}
+            }
+        }
+    }
+
+    pub fn draw(&self, ui: &mut egui::Ui) {
+        let (response, painter) = ui.allocate_painter(ui.available_size(), Sense::hover());
+        let rect = response.rect;
+        let tl = rect.left_top();
+        let mino_size = Vec2::new(5., 5.);
+
+        for y in 0..21 {
+            for x in 0..10 {
+                let color: CellColor = self.board[y].cell_color(x);
+                let mino_tl = tl + Vec2::new(mino_size.x * x as f32, mino_size.y * y as f32);
+
+                if color != CellColor::Empty {
+                    painter.rect_filled(Rect::from_min_size(mino_tl, mino_size), 0.0, Color32::GOLD);
+                }
+            }
+        }
+    }
+}
+
+fn calculate_game_box(size: &Vec2) -> Rect {
+    let w = size.x;
+    let h = size.y;
+    if w > h {
+        // center 1:1 along width
+        let x = (w - h) / 2.0;
+        Rect::from_min_size(Pos2::new(x, 0.0), Vec2::new(h, h))
+    } else {
+        // center 1:1 along height
+        let y = (h - w) / 2.0;
+        Rect::from_min_size(Pos2::new(0.0, y), Vec2::new(w, w))
+    }
+}
+
+fn origin_transform(rect: Rect) -> RectTransform {
+    RectTransform::from_to(Rect::from_min_size(Pos2::ZERO, rect.size()), rect)
+}

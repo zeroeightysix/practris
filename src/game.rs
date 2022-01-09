@@ -498,3 +498,9 @@ fn update_input(used: &mut bool, prev: bool, current: bool) {
         *used = true;
     }
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct PlayerUpdate {
+    pub events: Vec<Event>,
+    pub garbage_queue: u32,
+}
