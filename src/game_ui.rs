@@ -1,7 +1,6 @@
 use std::collections::VecDeque;
 
 use arrayvec::ArrayVec;
-use eframe::egui::{self, *, emath::RectTransform};
 use libtetris::*;
 
 use crate::game::{*, Event};
@@ -54,8 +53,8 @@ impl SingleplayerGameUi {
         self.draw_state.update(update, self.time);
     }
 
-    pub fn draw(&self, ui: &mut egui::Ui) {
-        self.draw_state.draw(ui);
+    pub fn draw(&self) {
+        self.draw_state.draw();
     }
 }
 
@@ -174,39 +173,6 @@ impl GameDrawState {
         }
     }
 
-    pub fn draw(&self, ui: &mut egui::Ui) {
-        let (response, painter) = ui.allocate_painter(ui.available_size(), Sense::hover());
-        let rect = response.rect;
-        let tl = rect.left_top();
-        let mino_size = Vec2::new(5., 5.);
-
-        for y in 0..21 {
-            for x in 0..10 {
-                let color: CellColor = self.board[y].cell_color(x);
-                let mino_tl = tl + Vec2::new(mino_size.x * x as f32, mino_size.y * y as f32);
-
-                if color != CellColor::Empty {
-                    painter.rect_filled(Rect::from_min_size(mino_tl, mino_size), 0.0, Color32::GOLD);
-                }
-            }
-        }
+    pub fn draw(&self) {
     }
-}
-
-fn calculate_game_box(size: &Vec2) -> Rect {
-    let w = size.x;
-    let h = size.y;
-    if w > h {
-        // center 1:1 along width
-        let x = (w - h) / 2.0;
-        Rect::from_min_size(Pos2::new(x, 0.0), Vec2::new(h, h))
-    } else {
-        // center 1:1 along height
-        let y = (h - w) / 2.0;
-        Rect::from_min_size(Pos2::new(0.0, y), Vec2::new(w, w))
-    }
-}
-
-fn origin_transform(rect: Rect) -> RectTransform {
-    RectTransform::from_to(Rect::from_min_size(Pos2::ZERO, rect.size()), rect)
 }

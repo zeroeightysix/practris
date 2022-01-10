@@ -1,11 +1,35 @@
-#![forbid(unsafe_code)]
-#![cfg_attr(not(debug_assertions), deny(warnings))] // Forbid warnings in release builds
 #![warn(clippy::all, rust_2018_idioms)]
 
-// When compiling natively:
-#[cfg(not(target_arch = "wasm32"))]
+use std::collections::HashSet;
+
+use gilrs::Gamepad;
+use nannou::prelude::*;
+
+use crate::model::Model;
+
+mod model;
+mod game;
+mod input;
+mod game_ui;
+mod singleplayer;
+
+trait State {
+    fn update(&mut self, keys: &HashSet<Key>, gamepad: Option<Gamepad<'_>>);
+    fn render(&mut self);
+}
+
 fn main() {
-    let app = zersis::App::default();
-    let native_options = eframe::NativeOptions::default();
-    eframe::run_native(Box::new(app), native_options);
+    env_logger::init();
+
+    nannou::app(model)
+        .update(update)
+        .run();
+}
+
+fn update(_app: &nannou::App, model: &mut Model, update: Update) {
+    model.update(update);
+}
+
+fn model(app: &nannou::App) -> Model {
+    Model::from_app(app)
 }

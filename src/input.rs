@@ -1,8 +1,8 @@
 use std::collections::HashSet;
-use eframe::egui::Key;
 
 use gilrs::{Axis, Button, Gamepad};
 use libtetris::*;
+use nannou::event::Key;
 use serde::{Deserialize, Serialize};
 use crate::game::Event;
 
@@ -36,12 +36,12 @@ struct Config<T> {
 impl Default for Config<Key> {
     fn default() -> Self {
         Config {
-            left: Key::ArrowLeft,
-            right: Key::ArrowRight,
+            left: Key::Left ,
+            right: Key::Right,
             rotate_left: Key::Z,
             rotate_right: Key::X,
             hard_drop: Key::Space,
-            soft_drop: Key::ArrowDown,
+            soft_drop: Key::Down,
             hold: Key::C,
         }
     }
