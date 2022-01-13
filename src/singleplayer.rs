@@ -29,7 +29,7 @@ impl SingleplayerGame {
         let seed = thread_rng().gen();
         let mut rng = Pcg64Mcg::from_seed(seed);
 
-        let game = Game::new(GameConfig::default(), &mut rng);
+        let game = Game::new(GameConfig::fast_config(), &mut rng);
 
         Self {
             ui: SingleplayerGameUi::new(&game, "amogus".to_string()),

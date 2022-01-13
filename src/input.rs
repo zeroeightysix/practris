@@ -28,6 +28,7 @@ struct Config<T> {
     right: T,
     rotate_left: T,
     rotate_right: T,
+    rotate_180: T,
     hard_drop: T,
     soft_drop: T,
     hold: T,
@@ -36,13 +37,14 @@ struct Config<T> {
 impl Default for Config<Key> {
     fn default() -> Self {
         Config {
-            left: Key::Left ,
-            right: Key::Right,
-            rotate_left: Key::Z,
-            rotate_right: Key::X,
-            hard_drop: Key::Space,
-            soft_drop: Key::Down,
-            hold: Key::C,
+            left: Key::J,
+            right: Key::L,
+            rotate_left: Key::A,
+            rotate_right: Key::E,
+            rotate_180: Key::Z,
+            hard_drop: Key::K,
+            soft_drop: Key::I,
+            hold: Key::Space,
         }
     }
 }
@@ -54,6 +56,7 @@ impl Default for Config<GamepadControl> {
             right: GamepadControl::Button(Button::DPadRight),
             rotate_left: GamepadControl::Button(Button::South),
             rotate_right: GamepadControl::Button(Button::East),
+            rotate_180: GamepadControl::Button(Button::North),
             hard_drop: GamepadControl::Button(Button::DPadUp),
             soft_drop: GamepadControl::Button(Button::DPadDown),
             hold: GamepadControl::Button(Button::LeftTrigger),
@@ -77,6 +80,12 @@ impl InputSource for UserInput {
                 gamepad,
                 self.keyboard.rotate_right,
                 self.gamepad.rotate_right,
+            ),
+            rotate_180: self.read_input(
+                keys,
+                gamepad,
+                self.keyboard.rotate_180,
+                self.gamepad.rotate_180,
             ),
             hard_drop: self.read_input(
                 keys,
