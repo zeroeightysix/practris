@@ -1,10 +1,11 @@
 use std::collections::HashSet;
+
 use gilrs::Gamepad;
-use nannou::event::Key;
+use nannou::prelude::*;
 use rand::{Rng, SeedableRng, thread_rng};
 use rand_pcg::Pcg64Mcg;
-use crate::game::{Game, GameConfig, PlayerUpdate};
 
+use crate::game::{Game, GameConfig, PlayerUpdate};
 use crate::game_ui::SingleplayerGameUi;
 use crate::input::{InputSource, UserInput};
 
@@ -85,7 +86,7 @@ impl crate::State for SingleplayerGame {
         }
     }
 
-    fn render(&mut self) {
-        self.ui.draw();
+    fn render(&self, draw: &Draw, rect: Rect) {
+        self.ui.draw(draw, rect);
     }
 }

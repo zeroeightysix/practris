@@ -1,3 +1,4 @@
+#![feature(let_else)]
 #![warn(clippy::all, rust_2018_idioms)]
 
 use std::collections::HashSet;
@@ -15,7 +16,7 @@ mod singleplayer;
 
 trait State {
     fn update(&mut self, keys: &HashSet<Key>, gamepad: Option<Gamepad<'_>>);
-    fn render(&mut self);
+    fn render(&self, draw: &Draw, rect: Rect);
 }
 
 fn main() {

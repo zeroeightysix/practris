@@ -1,12 +1,11 @@
 use std::collections::HashSet;
 
 use gilrs::{EventType, GamepadId, Gilrs};
-use nannou::{App, Frame};
-use nannou::event::{Key, Update};
+use nannou::prelude::*;
 use nannou_egui::{egui, Egui};
 
 use crate::singleplayer::SingleplayerGame;
-use crate::{CORNFLOWERBLUE, GOLD, Point2, Rect, State};
+use crate::State;
 
 const APP_NAME: &'static str = "zersis";
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
@@ -96,20 +95,18 @@ impl Model {
     }
 
     fn view(app: &App, model: &Self, frame: Frame<'_>) {
+        let draw = app.draw();
+        draw.background().color(CORNFLOWERBLUE);
+
         let (header, sidebar) = model.ui_occupation;
         let window_rect = app.window_rect();
 
         let draw_space = Rect::from_corners(
             window_rect.top_left() - Point2::new(0., header),
-            window_rect.bottom_right() - Point2::new(sidebar, 0.)
+            window_rect.bottom_right() - Point2::new(sidebar, 0.),
         );
 
-        let draw = app.draw();
-        draw.background().color(CORNFLOWERBLUE);
-
-        draw.arrow()
-            .color(GOLD)
-            .points(draw_space.top_left(), draw_space.bottom_right());
+        model.game.render(&draw, draw_space);
 
         draw.to_frame(app, &frame).unwrap();
 
@@ -148,7 +145,7 @@ impl Model {
             game: SingleplayerGame::new(),
             gilrs,
             gamepad,
-            ui_occupation: (0.0, 0.0)
+            ui_occupation: (0.0, 0.0),
         }
     }
 }

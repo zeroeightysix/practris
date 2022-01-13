@@ -2,6 +2,8 @@ use std::collections::VecDeque;
 
 use arrayvec::ArrayVec;
 use libtetris::*;
+use nannou::draw::primitive::Rect as PRect;
+use nannou::prelude::*;
 
 use crate::game::{*, Event};
 
@@ -39,7 +41,7 @@ impl SingleplayerGameUi {
         Self {
             draw_state: GameDrawState::new(
                 game.board.next_queue(),
-                player_name
+                player_name,
             ),
             time: 0,
         }
@@ -53,8 +55,9 @@ impl SingleplayerGameUi {
         self.draw_state.update(update, self.time);
     }
 
-    pub fn draw(&self) {
-        self.draw_state.draw();
+    pub fn draw(&self, draw: &Draw, rect: Rect) {
+        let sq = letterbox(rect);
+        self.draw_state.draw(draw, sq);
     }
 }
 
@@ -173,6 +176,82 @@ impl GameDrawState {
         }
     }
 
-    pub fn draw(&self) {
+    pub fn draw(&self, draw: &Draw, rect: Rect) {
+        const VIS_BOARD: usize = 23;
+
+        let mino_size = (rect.h() / VIS_BOARD as f32).floor();
+
+        let play_area = Rect::from_wh(Vec2::new(mino_size * 10., mino_size * VIS_BOARD as f32))
+            .bottom_left_of(rect);
+        draw.a::<PRect>(play_area.into())
+            .color(BLACK);
+
+        let mino_size = Vec2::new(mino_size, mino_size);
+        let tl_mino = Rect::from_wh(mino_size).bottom_left_of(rect);
+
+        let draw_mino = |x: f32, y: f32, color: Srgb<u8>| {
+            let mino = tl_mino.shift(Vec2::new(x, y) * mino_size);
+            draw.a::<PRect>(mino.into())
+                .color(color);
+        };
+
+        let board = &self.board;
+        for y in 0..VIS_BOARD {
+            let row = board[y];
+            for x in 0..10 {
+                let Some(color) = cell_color(row.cell_color(x)) else { continue; };
+
+                draw_mino(x as f32, y as f32, color);
+            }
+        }
+
+        match self.state {
+            State::Falling(fall, ghost) => {
+                let color = piece_color(fall.kind.0);
+                for (x, y) in fall.cells() {
+                    draw_mino(x as f32, y as f32, color);
+                }
+            }
+            _ => {}
+        }
     }
+}
+
+#[inline]
+fn cell_color(color: CellColor) -> Option<Srgb<u8>> {
+    match color {
+        CellColor::I => Some(CYAN),
+        CellColor::O => Some(YELLOW),
+        CellColor::T => Some(PURPLE),
+        CellColor::L => Some(ORANGE),
+        CellColor::J => Some(BLUE),
+        CellColor::S => Some(GREEN),
+        CellColor::Z => Some(RED),
+        CellColor::Garbage => Some(SLATEGREY),
+        CellColor::Unclearable => Some(DARKGREY),
+        CellColor::Empty => None
+    }
+}
+
+#[inline]
+fn piece_color(piece: Piece) -> Srgb<u8> {
+    match piece {
+        Piece::I => CYAN,
+        Piece::O => YELLOW,
+        Piece::T => PURPLE,
+        Piece::L => ORANGE,
+        Piece::J => BLUE,
+        Piece::S => GREEN,
+        Piece::Z => RED,
+    }
+}
+
+#[inline]
+fn with_size(rect: Rect, size: Vec2) -> Rect {
+    Rect::from_wh(size).shift(rect.bottom_left())
+}
+
+fn letterbox(size: Rect) -> Rect {
+    let d = size.w().min(size.h());
+    Rect::from_xy_wh(size.xy(), Vec2::new(d, d))
 }
