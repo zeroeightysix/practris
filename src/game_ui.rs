@@ -208,8 +208,17 @@ impl GameDrawState {
         match self.state {
             State::Falling(fall, ghost) => {
                 let color = piece_color(fall.kind.0);
+
                 for (x, y) in fall.cells() {
                     draw_mino(x as f32, y as f32, color);
+                }
+
+                for (x, y) in ghost.cells() {
+                    let mino = tl_mino.shift(Vec2::new(x as f32, y as f32) * mino_size);
+                    draw.a::<PRect>(mino.into())
+                        .stroke_weight(2.0)
+                        .stroke(color)
+                        .no_fill();
                 }
             }
             _ => {}
