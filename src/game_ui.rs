@@ -177,17 +177,19 @@ impl GameDrawState {
     }
 
     pub fn draw(&self, draw: &Draw, rect: Rect) {
+        draw.a::<PRect>(rect.into())
+            .color(GOLD);
+
         const VIS_BOARD: usize = 23;
 
         let mino_size = (rect.h() / VIS_BOARD as f32).floor();
 
-        let play_area = Rect::from_wh(Vec2::new(mino_size * 10., mino_size * VIS_BOARD as f32))
-            .bottom_left_of(rect);
+        let play_area = Rect::from_xy_wh(rect.xy(), Vec2::new(mino_size * 10., mino_size * VIS_BOARD as f32));
         draw.a::<PRect>(play_area.into())
             .color(BLACK);
 
         let mino_size = Vec2::new(mino_size, mino_size);
-        let tl_mino = Rect::from_wh(mino_size).bottom_left_of(rect);
+        let tl_mino = Rect::from_wh(mino_size).bottom_left_of(play_area);
 
         let draw_mino = |x: f32, y: f32, color: Srgb<u8>| {
             let mino = tl_mino.shift(Vec2::new(x, y) * mino_size);
@@ -227,7 +229,7 @@ impl GameDrawState {
         for (index, piece) in self.next_queue.iter().take(5).enumerate() {
             let piece = PieceState(*piece, RotationState::North);
             let color = piece_color(piece.0);
-            let rect = Rect::from_wh(mino_size * 3.)
+            let rect = Rect::from_wh(mino_size * 4.)
                 .align_top_of(play_area)
                 .right_of(play_area)
                 .shift_y(index as f32 * -3. * mino_size.y);
@@ -269,11 +271,6 @@ fn piece_color(piece: Piece) -> Srgb<u8> {
         Piece::S => GREEN,
         Piece::Z => RED,
     }
-}
-
-#[inline]
-fn with_size(rect: Rect, size: Vec2) -> Rect {
-    Rect::from_wh(size).shift(rect.bottom_left())
 }
 
 fn letterbox(size: Rect) -> Rect {
