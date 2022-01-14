@@ -223,6 +223,22 @@ impl GameDrawState {
             }
             _ => {}
         }
+
+        for (index, piece) in self.next_queue.iter().take(5).enumerate() {
+            let piece = PieceState(*piece, RotationState::North);
+            let color = piece_color(piece.0);
+            let rect = Rect::from_wh(mino_size * 3.)
+                .align_top_of(play_area)
+                .right_of(play_area)
+                .shift_y(index as f32 * -3. * mino_size.y);
+
+            for (x, y) in piece.cells() {
+                let rect = Rect::from_xy_wh(rect.xy(), mino_size)
+                    .shift(Vec2::new(x as f32, y as f32) * mino_size);
+                draw.a::<PRect>(rect.into())
+                    .color(color);
+            }
+        }
     }
 }
 
