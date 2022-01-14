@@ -177,9 +177,6 @@ impl GameDrawState {
     }
 
     pub fn draw(&self, draw: &Draw, rect: Rect) {
-        draw.a::<PRect>(rect.into())
-            .color(GOLD);
-
         const VIS_BOARD: usize = 23;
 
         let mino_size = (rect.h() / VIS_BOARD as f32).floor();
@@ -226,20 +223,37 @@ impl GameDrawState {
             _ => {}
         }
 
+        let draw_within = |piece: PieceState, rect: Rect| {
+            let color = piece_color(piece.0);
+            let x_offset = match piece.0 {
+                Piece::I | Piece::O => -0.5,
+                _ => 0.,
+            };
+            for (x, y) in piece.cells() {
+                let rect = Rect::from_xy_wh(rect.xy(), mino_size)
+                    .shift(Vec2::new(x as f32 + x_offset, y as f32) * mino_size);
+                draw.a::<PRect>(rect.into())
+                    .color(color);
+            }
+        };
+
         for (index, piece) in self.next_queue.iter().take(5).enumerate() {
             let piece = PieceState(*piece, RotationState::North);
-            let color = piece_color(piece.0);
-            let rect = Rect::from_wh(mino_size * 4.)
+            let rect = Rect::from_wh(mino_size * 5.)
                 .align_top_of(play_area)
                 .right_of(play_area)
                 .shift_y(index as f32 * -3. * mino_size.y);
 
-            for (x, y) in piece.cells() {
-                let rect = Rect::from_xy_wh(rect.xy(), mino_size)
-                    .shift(Vec2::new(x as f32, y as f32) * mino_size);
-                draw.a::<PRect>(rect.into())
-                    .color(color);
-            }
+            draw_within(piece, rect);
+        }
+
+        if let Some(piece) = self.hold_piece {
+            let piece = PieceState(piece, RotationState::North);
+            let rect = Rect::from_wh(mino_size * 5.)
+                .align_top_of(play_area)
+                .left_of(play_area);
+
+            draw_within(piece, rect);
         }
     }
 }
