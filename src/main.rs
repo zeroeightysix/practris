@@ -11,9 +11,13 @@ use crate::model::Model;
 mod model;
 mod game;
 mod input;
-mod game_ui;
 mod singleplayer;
 mod util;
+
+mod ui {
+    pub use game_ui::*;
+    mod game_ui;
+}
 
 trait State {
     fn update(&mut self, keys: &HashSet<Key>, gamepad: Option<Gamepad<'_>>);

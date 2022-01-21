@@ -6,7 +6,7 @@ use rand::{Rng, SeedableRng, thread_rng};
 use rand_pcg::Pcg64Mcg;
 
 use crate::game::{Game, GameConfig, PlayerUpdate};
-use crate::game_ui::SingleplayerGameUi;
+use crate::ui::SingleplayerGameUi;
 use crate::input::{InputSource, UserInput};
 
 pub struct SingleplayerGame {
