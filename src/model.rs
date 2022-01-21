@@ -122,7 +122,7 @@ impl Model {
 
     fn view(app: &App, model: &Self, frame: Frame<'_>) {
         let draw = app.draw();
-        draw.background().color(CORNFLOWERBLUE);
+        draw.background().color(GREY);
 
         let (header, sidebar) = model.ui_occupation;
         let window_rect = app.window_rect();
