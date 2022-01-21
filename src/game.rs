@@ -85,7 +85,7 @@ pub enum Event {
     FrameBeforePieceSpawns,
     PieceMoved,
     PieceRotated,
-    PieceTSpined,
+    PieceTSpun,
     PieceHeld(Piece),
     StackTouched,
     SoftDropped,
@@ -316,7 +316,7 @@ impl Game {
                         falling.rotation_move_count += 1;
                         falling.lock_delay = self.config.lock_delay;
                         if falling.piece.tspin != TspinStatus::None {
-                            events.push(Event::PieceTSpined);
+                            events.push(Event::PieceTSpun);
                         } else {
                             events.push(Event::PieceRotated);
                         }
@@ -328,7 +328,7 @@ impl Game {
                         falling.rotation_move_count += 1;
                         falling.lock_delay = self.config.lock_delay;
                         if falling.piece.tspin != TspinStatus::None {
-                            events.push(Event::PieceTSpined);
+                            events.push(Event::PieceTSpun);
                         } else {
                             events.push(Event::PieceRotated);
                         }
@@ -340,7 +340,7 @@ impl Game {
                         falling.rotation_move_count += 1;
                         falling.lock_delay = self.config.lock_delay;
                         if falling.piece.tspin != TspinStatus::None {
-                            events.push(Event::PieceTSpined);
+                            events.push(Event::PieceTSpun);
                         } else {
                             events.push(Event::PieceRotated);
                         }
