@@ -237,7 +237,7 @@ impl GameDrawState {
             }
         };
 
-        for (index, piece) in self.next_queue.iter().take(5).enumerate() {
+        for (index, piece) in self.next_queue.iter().take(7).enumerate() {
             let piece = PieceState(*piece, RotationState::North);
             let rect = Rect::from_wh(mino_size * 5.)
                 .align_top_of(play_area)
