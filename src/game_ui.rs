@@ -6,6 +6,7 @@ use nannou::draw::primitive::Rect as PRect;
 use nannou::prelude::*;
 
 use crate::game::{*, Event};
+use crate::util::RectExt;
 
 pub struct SingleplayerGameUi {
     draw_state: GameDrawState,
@@ -181,7 +182,7 @@ impl GameDrawState {
 
         let mino_size = (rect.h() / VIS_BOARD as f32).floor();
 
-        let play_area = Rect::from_xy_wh(rect.xy(), Vec2::new(mino_size * 10., mino_size * VIS_BOARD as f32));
+        let play_area = Rect::from_xy_wh(rect.xy(), Vec2::new(mino_size * 10., mino_size * VIS_BOARD as f32)).floor();
         draw.a::<PRect>(play_area.into())
             .color(BLACK);
 

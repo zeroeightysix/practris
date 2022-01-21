@@ -13,6 +13,7 @@ mod game;
 mod input;
 mod game_ui;
 mod singleplayer;
+mod util;
 
 trait State {
     fn update(&mut self, keys: &HashSet<Key>, gamepad: Option<Gamepad<'_>>);
