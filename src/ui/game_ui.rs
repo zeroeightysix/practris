@@ -6,7 +6,9 @@ use nannou::draw::primitive::Rect as PRect;
 use nannou::prelude::*;
 
 use crate::game::{*, Event};
+use crate::ui::skin::Skin;
 use crate::util::RectExt;
+use crate::wgpu::Texture;
 
 pub struct SingleplayerGameUi {
     draw_state: GameDrawState,
@@ -26,6 +28,7 @@ pub struct GameDrawState {
     back_to_back_splash: Option<u32>,
     clear_splash: Option<(&'static str, u32)>,
     name: String,
+    skin: Skin
 }
 
 enum State {
@@ -38,11 +41,13 @@ impl SingleplayerGameUi {
     pub fn new(
         game: &Game,
         player_name: String,
+        texture: Texture,
     ) -> Self {
         Self {
             draw_state: GameDrawState::new(
                 game.board.next_queue(),
                 player_name,
+                texture,
             ),
             time: 0,
         }
@@ -63,11 +68,11 @@ impl SingleplayerGameUi {
 }
 
 impl GameDrawState {
-    pub fn new(queue: impl IntoIterator<Item=Piece>, name: String) -> Self {
-        Self::new_from_board(ArrayVec::from([*ColoredRow::EMPTY; 40]), queue, name)
+    pub fn new(queue: impl IntoIterator<Item=Piece>, name: String, texture: Texture) -> Self {
+        Self::new_from_board(ArrayVec::from([*ColoredRow::EMPTY; 40]), queue, name, texture)
     }
 
-    pub fn new_from_board(board: ArrayVec<[ColoredRow; 40]>, queue: impl IntoIterator<Item=Piece>, name: String) -> Self {
+    pub fn new_from_board(board: ArrayVec<[ColoredRow; 40]>, queue: impl IntoIterator<Item=Piece>, name: String, texture: Texture) -> Self {
         Self {
             board,
             state: State::Delay,
@@ -81,6 +86,7 @@ impl GameDrawState {
             back_to_back_splash: None,
             clear_splash: None,
             name,
+            skin: Skin::Basic(texture)
         }
     }
 
@@ -178,7 +184,7 @@ impl GameDrawState {
     }
 
     pub fn draw(&self, draw: &Draw, rect: Rect) {
-        const VIS_BOARD: usize = 23;
+        const VIS_BOARD: usize = 20;
 
         let mino_size = (rect.h() / VIS_BOARD as f32).floor();
 
@@ -186,105 +192,76 @@ impl GameDrawState {
         draw.a::<PRect>(play_area.into())
             .color(BLACK);
 
-        let mino_size = Vec2::new(mino_size, mino_size);
-        let tl_mino = Rect::from_wh(mino_size).bottom_left_of(play_area);
-
-        let draw_mino = |x: f32, y: f32, color: Srgb<u8>| {
-            let mino = tl_mino.shift(Vec2::new(x, y) * mino_size);
-            draw.a::<PRect>(mino.into())
-                .color(color);
+        let bl = play_area.bottom_left();
+        let mino_xy = |x: i32, y: i32| -> (f32, f32) {
+            (bl.x + x as f32 * mino_size, bl.y + y as f32 * mino_size)
         };
 
         let board = &self.board;
         for y in 0..VIS_BOARD {
             let row = board[y];
             for x in 0..10 {
-                let Some(color) = cell_color(row.cell_color(x)) else { continue; };
-
-                draw_mino(x as f32, y as f32, color);
+                let color = row.cell_color(x);
+                let (x, y) = mino_xy(x as i32, y as i32);
+                self.skin.draw_mino(&draw, color, x, y, mino_size);
             }
         }
 
-        match self.state {
-            State::Falling(fall, ghost) => {
-                let color = piece_color(fall.kind.0);
-
-                for (x, y) in fall.cells() {
-                    draw_mino(x as f32, y as f32, color);
-                }
-
-                for (x, y) in ghost.cells() {
-                    let mino = tl_mino.shift(Vec2::new(x as f32, y as f32) * mino_size);
-                    draw.a::<PRect>(mino.into())
-                        .stroke_weight(2.0)
-                        .stroke(color)
-                        .no_fill();
-                }
+        #[inline]
+        fn cell_color_from_piece(piece: Piece) -> CellColor {
+            match piece {
+                Piece::I => CellColor::I,
+                Piece::O => CellColor::O,
+                Piece::T => CellColor::T,
+                Piece::L => CellColor::L,
+                Piece::J => CellColor::J,
+                Piece::S => CellColor::S,
+                Piece::Z => CellColor::Z,
             }
-            _ => {}
+        }
+
+        let draw_cells = |color: CellColor, cells: [(i32, i32); 4]| {
+            for (x, y) in cells {
+                let (x, y) = mino_xy(x, y);
+                self.skin.draw_mino(&draw, color, x, y, mino_size);
+            }
+        };
+
+        if let State::Falling(fall, ghost) = self.state {
+            let color = cell_color_from_piece(fall.kind.0);
+            draw_cells(color, fall.cells());
+            draw_cells(CellColor::Unclearable, ghost.cells());
         }
 
         let draw_within = |piece: PieceState, rect: Rect| {
-            let color = piece_color(piece.0);
+            let color = cell_color_from_piece(piece.0);
             let x_offset = match piece.0 {
-                Piece::I | Piece::O => -0.5,
-                _ => 0.,
+                Piece::I | Piece::O => -1.,
+                _ => -0.5,
             };
             for (x, y) in piece.cells() {
-                let rect = Rect::from_xy_wh(rect.xy(), mino_size)
-                    .shift(Vec2::new(x as f32 + x_offset, y as f32) * mino_size);
-                draw.a::<PRect>(rect.into())
-                    .color(color);
+                self.skin.draw_mino(&draw, color, rect.x() + (x as f32 + x_offset) * mino_size, rect.y() + y as f32 * mino_size, mino_size);
             }
         };
 
         for (index, piece) in self.next_queue.iter().take(7).enumerate() {
             let piece = PieceState(*piece, RotationState::North);
-            let rect = Rect::from_wh(mino_size * 5.)
+            let rect = Rect::from_wh(Vec2::new(mino_size, mino_size) * 5.)
                 .align_top_of(play_area)
                 .right_of(play_area)
-                .shift_y(index as f32 * -3. * mino_size.y);
+                .shift_y(index as f32 * -3. * mino_size);
 
             draw_within(piece, rect);
         }
 
         if let Some(piece) = self.hold_piece {
             let piece = PieceState(piece, RotationState::North);
-            let rect = Rect::from_wh(mino_size * 5.)
+            let rect = Rect::from_wh(Vec2::new(mino_size, mino_size) * 5.)
                 .align_top_of(play_area)
                 .left_of(play_area);
 
             draw_within(piece, rect);
         }
-    }
-}
-
-#[inline]
-fn cell_color(color: CellColor) -> Option<Srgb<u8>> {
-    match color {
-        CellColor::I => Some(CYAN),
-        CellColor::O => Some(YELLOW),
-        CellColor::T => Some(PURPLE),
-        CellColor::L => Some(ORANGE),
-        CellColor::J => Some(BLUE),
-        CellColor::S => Some(GREEN),
-        CellColor::Z => Some(RED),
-        CellColor::Garbage => Some(SLATEGREY),
-        CellColor::Unclearable => Some(DARKGREY),
-        CellColor::Empty => None
-    }
-}
-
-#[inline]
-fn piece_color(piece: Piece) -> Srgb<u8> {
-    match piece {
-        Piece::I => CYAN,
-        Piece::O => YELLOW,
-        Piece::T => PURPLE,
-        Piece::L => ORANGE,
-        Piece::J => BLUE,
-        Piece::S => GREEN,
-        Piece::Z => RED,
     }
 }
 

@@ -16,7 +16,9 @@ mod util;
 
 mod ui {
     pub use game_ui::*;
+
     mod game_ui;
+    pub mod skin;
 }
 
 trait State {

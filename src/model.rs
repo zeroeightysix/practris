@@ -162,13 +162,16 @@ impl Model {
         });
         let gamepad = gilrs.gamepads().next().map(|(id, _)| id);
 
+        let assets = app.assets_path().unwrap();
+        let texture = wgpu::Texture::from_path(app, assets.join("skin.png")).unwrap();
+
         Self {
             egui,
             ui: Ui {
                 settings_open: false
             },
             keys_pressed: HashSet::new(),
-            game: SingleplayerGame::new(),
+            game: SingleplayerGame::new(texture),
             gilrs,
             gamepad,
             ui_occupation: (0.0, 0.0),
