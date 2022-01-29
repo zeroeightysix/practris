@@ -1,5 +1,5 @@
 [package]
-name = "zersis"
+name = "practris"
 version = "0.1.0"
 authors = ["Ridan Vandenbergh <ridanvandenbergh@gmail.com>"]
 edition = "2021"

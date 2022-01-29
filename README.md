@@ -1,3 +1,3 @@
-# zersis
+# practris
 
 Tetris trainer

@@ -8,7 +8,7 @@ use nannou_egui::{egui, Egui};
 use crate::singleplayer::SingleplayerGame;
 use crate::State;
 
-const APP_NAME: &'static str = "zersis";
+const APP_NAME: &'static str = "practris";
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
 pub struct Model {
@@ -30,7 +30,7 @@ impl Model {
     /// Process a game tick, which processes inputs once, decreases timers, etc.
     /// In a correctly timed environment, this is done exactly 60 times per second.
     /// Some games may choose to rely on the FPS to be consistently 60, and thus tick when the game is rendered.
-    /// zersis allows itself more than 60 fps, thus we separate this logic and only tick when necessary.
+    /// practris allows itself more than 60 fps, thus we separate this logic and only tick when necessary.
     fn tick(&mut self) {
         self.update_gamepad();
         self.game.update(&self.keys_pressed, self.gamepad.map(|id| self.gilrs.gamepad(id)));
@@ -43,7 +43,7 @@ impl Model {
         // how many ticks should have passed since the last tick?
         const TICK_STRIDE: f32 = 1000. / 60.;
         let diff = (update.since_start - self.last_tick).as_millis();
-        let pass = diff as f32 / TICK_STRIDE; // cast is okay: overflow only if you left zersis open for longer than you or your children will live
+        let pass = diff as f32 / TICK_STRIDE; // cast is okay: overflow only if you left practris open for longer than you or your children will live
         if pass >= 60. * 10. { // the game hasn't seen a tick update in over 10s: let's not care and skip time.
             log::info!("Skipping ticks as the game is lagging behind for >10s");
             self.last_tick = update.since_start;

@@ -1854,6 +1854,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
 
 [[package]]
+name = "practris"
+version = "0.1.0"
+dependencies = [
+ "arrayvec 0.5.2",
+ "env_logger",
+ "gilrs",
+ "libtetris",
+ "log",
+ "nannou",
+ "nannou_egui",
+ "ordered-float 2.10.0",
+ "rand 0.7.3",
+ "rand_pcg",
+ "serde",
+ "winit",
+]
+
+[[package]]
 name = "proc-macro-crate"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2822,21 +2840,3 @@ name = "xml-rs"
 version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2d7d3948613f75c98fd9328cfdcc45acc4d360655289d0a7d4ec931392200a3"
-
-[[package]]
-name = "zersis"
-version = "0.1.0"
-dependencies = [
- "arrayvec 0.5.2",
- "env_logger",
- "gilrs",
- "libtetris",
- "log",
- "nannou",
- "nannou_egui",
- "ordered-float 2.10.0",
- "rand 0.7.3",
- "rand_pcg",
- "serde",
- "winit",
-]
