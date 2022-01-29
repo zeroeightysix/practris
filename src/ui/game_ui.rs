@@ -229,8 +229,8 @@ impl GameDrawState {
 
         if let State::Falling(fall, ghost) = self.state {
             let color = cell_color_from_piece(fall.kind.0);
-            draw_cells(color, fall.cells());
             draw_cells(CellColor::Unclearable, ghost.cells());
+            draw_cells(color, fall.cells());
         }
 
         let draw_within = |piece: PieceState, rect: Rect| {

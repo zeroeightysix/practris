@@ -1,4 +1,4 @@
-use libtetris::{CellColor, Piece};
+use libtetris::CellColor;
 use nannou::Draw;
 
 use crate::wgpu::Texture;
