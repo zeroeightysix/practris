@@ -37,8 +37,8 @@ fn color_to_tex_index(color: CellColor) -> Option<usize> {
         CellColor::T => Some(6),
         CellColor::L => Some(1),
         CellColor::J => Some(5),
-        CellColor::S => Some(0),
-        CellColor::Z => Some(3),
+        CellColor::S => Some(3),
+        CellColor::Z => Some(0),
         CellColor::Garbage => Some(9),
         // shh, don't tell anyone, but we don't really use unclearable at any point,
         // so we're using it as the ghost piece here
