@@ -37,14 +37,14 @@ pub(crate) struct Config<T> {
 impl Default for Config<Key> {
     fn default() -> Self {
         Config {
-            left: Key::J,
-            right: Key::L,
-            rotate_left: Key::A,
-            rotate_right: Key::E,
-            rotate_180: Key::Z,
-            hard_drop: Key::K,
-            soft_drop: Key::I,
-            hold: Key::Space,
+            left: Key::Left,
+            right: Key::Right,
+            rotate_left: Key::Z,
+            rotate_right: Key::X,
+            rotate_180: Key::A,
+            hard_drop: Key::Space,
+            soft_drop: Key::Down,
+            hold: Key::C,
         }
     }
 }
