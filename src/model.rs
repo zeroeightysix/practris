@@ -131,14 +131,15 @@ impl Model {
                 .show(ctx, |ui| {
                     egui::Grid::new("kb_grid").show(ui, |ui| {
                         for (idx, (name, field)) in [
-                            ("left", &mut keyboard.left),
-                            ("right", &mut keyboard.right),
-                            ("rotate_left", &mut keyboard.rotate_left),
-                            ("rotate_right", &mut keyboard.rotate_right),
-                            ("rotate_180", &mut keyboard.rotate_180),
-                            ("hard_drop", &mut keyboard.hard_drop),
-                            ("soft_drop", &mut keyboard.soft_drop),
-                            ("hold", &mut keyboard.hold),
+                            ("Left", &mut keyboard.left),
+                            ("Right", &mut keyboard.right),
+                            ("Rotate CCW", &mut keyboard.rotate_left),
+                            ("Rotate CW", &mut keyboard.rotate_right),
+                            ("Rotate 180°", &mut keyboard.rotate_180),
+                            ("Hard drop", &mut keyboard.hard_drop),
+                            ("Soft drop", &mut keyboard.soft_drop),
+                            ("Hold", &mut keyboard.hold),
+                            ("Reset", &mut keyboard.reset),
                         ].into_iter().enumerate() {
                             ui.label(name);
                             // if this key is currently waiting for input,
