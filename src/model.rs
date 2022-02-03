@@ -256,6 +256,7 @@ impl Model {
     }
 
     pub fn from_app(app: &App) -> Self {
+        app.set_exit_on_escape(false); // closed event not emitted on escape? it's annoying either way
         let window_id = app.new_window()
             .key_pressed(Model::key_pressed)
             .key_released(Model::key_released)
