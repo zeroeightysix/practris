@@ -7,7 +7,7 @@ use rand_pcg::Pcg64Mcg;
 
 use crate::game::{Game, GameConfig, PlayerUpdate};
 use crate::ui::SingleplayerGameUi;
-use crate::input::{InputSource, UserInput};
+use crate::input::InputSource;
 use crate::wgpu::Texture;
 
 pub struct SingleplayerGame {
@@ -26,7 +26,7 @@ pub enum State {
 }
 
 impl SingleplayerGame {
-    pub fn new(texture: Texture) -> Self {
+    pub fn new(texture: Texture, input: Box<dyn InputSource>) -> Self {
         let seed = thread_rng().gen();
         let mut rng = Pcg64Mcg::from_seed(seed);
 
@@ -35,7 +35,7 @@ impl SingleplayerGame {
         Self {
             ui: SingleplayerGameUi::new(&game, "amogus".to_string(), texture),
             game,
-            input: Box::new(UserInput::default()),
+            input,
             state: State::Starting(300),
             rng
         }

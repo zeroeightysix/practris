@@ -14,10 +14,12 @@ rand = "0.7"
 rand_pcg = "0.2"
 ordered-float = { version = "2.10", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
+ron = "^0.7"
 gilrs = { version = "0.8", features = ["serde-serialize"] }
 log = "0.4"
 env_logger = "0.9"
 arrayvec = { version = "0.5", features = ["serde"] }
+dirs = "4"
 
 [profile.release]
 opt-level = 2 # fast and small wasm

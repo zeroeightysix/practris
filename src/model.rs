@@ -1,9 +1,11 @@
 use std::collections::HashSet;
+use std::path::PathBuf;
 use std::time::Duration;
 
 use gilrs::{EventType, GamepadId, Gilrs};
 use nannou::prelude::*;
 use nannou_egui::{egui, Egui};
+use crate::config::UserSettings;
 
 use crate::singleplayer::SingleplayerGame;
 use crate::State;
@@ -20,6 +22,7 @@ pub struct Model {
     gamepad: Option<GamepadId>,
     ui_occupation: (f32, f32),
     last_tick: Duration,
+    settings: UserSettings,
 }
 
 struct Ui {
@@ -139,12 +142,30 @@ impl Model {
         model.egui.draw_to_frame(&frame).unwrap();
     }
 
+    fn closed(_: &App, model: &mut Self) {
+        if let Some(dir) = get_config_file() {
+            match ron::ser::to_string_pretty(&model.settings, Default::default()) {
+                Ok(cfg) => {
+                    if let Err(e) = std::fs::write(dir, cfg) {
+                        log::error!("Failed to write configuration: {e}")
+                    }
+                }
+                Err(e) => {
+                    log::error!("Failed to serialize configuration: {e}");
+                }
+            };
+        } else {
+            log::error!("Could not get config dir in order to save configuration");
+        }
+    }
+
     pub fn from_app(app: &App) -> Self {
         let window_id = app.new_window()
             .key_pressed(Model::key_pressed)
             .key_released(Model::key_released)
             .raw_event(Model::raw_event)
             .view(Model::view)
+            .closed(Model::closed)
             .build()
             .unwrap();
 
@@ -165,17 +186,39 @@ impl Model {
         let assets = app.assets_path().unwrap();
         let texture = wgpu::Texture::from_path(app, assets.join("skin.png")).unwrap();
 
+        let settings = if let Some(dir) = get_config_file() {
+            if let Ok(src) = std::fs::read_to_string(dir) {
+                ron::from_str(src.as_str())
+                    .unwrap_or_else(|e| {
+                        log::error!("Failed to read config: {e}!");
+                        UserSettings::default()
+                    })
+            } else {
+                log::info!("Configuration file not present: probably a first launch.");
+                UserSettings::default()
+            }
+        } else {
+            log::error!("Could not get config dir in order to load configuration");
+            UserSettings::default()
+        };
+
         Self {
             egui,
             ui: Ui {
                 settings_open: false
             },
             keys_pressed: HashSet::new(),
-            game: SingleplayerGame::new(texture),
+            game: SingleplayerGame::new(texture, Box::new(settings.input.clone())),
             gilrs,
             gamepad,
             ui_occupation: (0.0, 0.0),
-            last_tick: Duration::from_secs(0)
+            last_tick: Duration::from_secs(0),
+            settings
         }
     }
+}
+
+fn get_config_file() -> Option<PathBuf> {
+    dirs::config_dir()
+        .map(|d| d.join(format!("{APP_NAME}.ron")))
 }

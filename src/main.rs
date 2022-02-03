@@ -13,6 +13,7 @@ mod game;
 mod input;
 mod singleplayer;
 mod util;
+mod config;
 
 mod ui {
     pub use game_ui::*;
