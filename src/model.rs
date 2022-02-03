@@ -4,6 +4,7 @@ use std::time::Duration;
 
 use gilrs::{EventType, GamepadId, Gilrs};
 use nannou::prelude::*;
+use nannou::text::FontSize;
 use nannou_egui::{egui, Egui};
 use crate::config::UserSettings;
 use crate::input::{Config, UserInput};
@@ -218,7 +219,17 @@ impl Model {
         );
 
         model.game.render(&draw, draw_space);
-
+        if model.ui.is_paused() {
+            draw.rect()
+                .xy(window_rect.xy())
+                .wh(window_rect.wh())
+                .color(Rgba::new(0., 0., 0., 0.7));
+            draw.text("PAUSED")
+                .font_size((draw_space.w() / 40.) as FontSize)
+                .w(draw_space.w()) // for some reason, if the w is not specified, at large sizes the text will wrap (PAUS\nED)
+                .xy(draw_space.xy())
+                .center_justify();
+        }
         draw.to_frame(app, &frame).unwrap();
 
         model.egui.draw_to_frame(&frame).unwrap();
