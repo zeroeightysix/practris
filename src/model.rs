@@ -169,6 +169,7 @@ impl Model {
                     keyboard: kb,
                     ..Default::default()
                 };
+                log::info!("User keyboard settings changed to {:#?}", self.settings.input);
                 self.game.input = Box::new(self.settings.input.clone());
             }
         }
@@ -237,9 +238,10 @@ impl Model {
 
     fn closed(_: &App, model: &mut Self) {
         if let Some(dir) = get_config_file() {
+            log::info!("Saving configuration to {dir:?}");
             match ron::ser::to_string_pretty(&model.settings, Default::default()) {
                 Ok(cfg) => {
-                    if let Err(e) = std::fs::write(dir, cfg) {
+                    if let Err(e) = std::fs::write(&dir, cfg) {
                         log::error!("Failed to write configuration: {e}")
                     }
                 }
@@ -280,6 +282,7 @@ impl Model {
         let texture = wgpu::Texture::from_path(app, assets.join("skin.png")).unwrap();
 
         let settings = if let Some(dir) = get_config_file() {
+            log::info!("Loading configuration from {dir:?}");
             if let Ok(src) = std::fs::read_to_string(dir) {
                 ron::from_str(src.as_str())
                     .unwrap_or_else(|e| {
