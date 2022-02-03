@@ -164,10 +164,11 @@ impl Model {
 
             if !open {
                 let (kb, _) = self.ui.keyboard.take().unwrap();
-                self.game.input = Box::new(UserInput {
+                self.settings.input = UserInput {
                     keyboard: kb,
                     ..Default::default()
-                })
+                };
+                self.game.input = Box::new(self.settings.input.clone());
             }
         }
 
