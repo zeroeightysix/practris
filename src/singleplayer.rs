@@ -13,7 +13,7 @@ use crate::wgpu::Texture;
 pub struct SingleplayerGame {
     ui: SingleplayerGameUi,
     game: Game,
-    input: Box<dyn InputSource>,
+    pub(crate) input: Box<dyn InputSource>,
     pub state: State,
     rng: Pcg64Mcg
 }

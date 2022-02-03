@@ -18,20 +18,20 @@ pub trait InputSource {
 
 #[derive(Copy, Clone, Serialize, Deserialize, Default, Debug)]
 pub struct UserInput {
-    keyboard: Config<Key>,
-    gamepad: Config<GamepadControl>,
+    pub(crate) keyboard: Config<Key>,
+    pub(crate) gamepad: Config<GamepadControl>,
 }
 
 #[derive(Copy, Clone, Serialize, Deserialize, Debug)]
-struct Config<T> {
-    left: T,
-    right: T,
-    rotate_left: T,
-    rotate_right: T,
-    rotate_180: T,
-    hard_drop: T,
-    soft_drop: T,
-    hold: T,
+pub(crate) struct Config<T> {
+    pub(crate) left: T,
+    pub(crate) right: T,
+    pub(crate) rotate_left: T,
+    pub(crate) rotate_right: T,
+    pub(crate) rotate_180: T,
+    pub(crate) hard_drop: T,
+    pub(crate) soft_drop: T,
+    pub(crate) hold: T,
 }
 
 impl Default for Config<Key> {
@@ -126,7 +126,7 @@ impl UserInput {
 }
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
-enum GamepadControl {
+pub(crate) enum GamepadControl {
     Button(Button),
     NegativeAxis(Axis),
     PositiveAxis(Axis),

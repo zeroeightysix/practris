@@ -6,6 +6,7 @@ use gilrs::{EventType, GamepadId, Gilrs};
 use nannou::prelude::*;
 use nannou_egui::{egui, Egui};
 use crate::config::UserSettings;
+use crate::input::{Config, UserInput};
 
 use crate::singleplayer::SingleplayerGame;
 use crate::State;
@@ -27,6 +28,16 @@ pub struct Model {
 
 struct Ui {
     settings_open: bool,
+    keyboard: Option<(Config<Key>, Option<usize>)>,
+}
+
+impl Default for Ui {
+    fn default() -> Self {
+        Self {
+            settings_open: false,
+            keyboard: None,
+        }
+    }
 }
 
 impl Model {
@@ -47,7 +58,8 @@ impl Model {
         const TICK_STRIDE: f32 = 1000. / 60.;
         let diff = (update.since_start - self.last_tick).as_millis();
         let pass = diff as f32 / TICK_STRIDE; // cast is okay: overflow only if you left practris open for longer than you or your children will live
-        if pass >= 60. * 10. { // the game hasn't seen a tick update in over 10s: let's not care and skip time.
+        if pass >= 60. * 10. {
+            // the game hasn't seen a tick update in over 10s: let's not care and skip time.
             log::info!("Skipping ticks as the game is lagging behind for >10s");
             self.last_tick = update.since_start;
         } else if pass >= 1. {
@@ -58,8 +70,12 @@ impl Model {
             }
         }
 
+        self.egui.set_elapsed_time(update.since_start);
+        self.show_ui();
+    }
+
+    fn show_ui(&mut self) {
         let egui = &mut self.egui;
-        egui.set_elapsed_time(update.since_start);
         let frame_ctx = egui.begin_frame();
         let ctx = &frame_ctx.context();
 
@@ -84,11 +100,66 @@ impl Model {
                     ui.vertical_centered(|ui| {
                         ui.heading("Settings");
                         ui.separator()
-                    })
+                    });
+
+                    ui.add_enabled_ui(self.ui.keyboard.is_none(), |ui| {
+                        if ui.button("Keyboard settings").clicked() {
+                            let input = self.settings.input.clone();
+                            self.ui.keyboard = Some((input.keyboard, None));
+                        }
+                    });
                 }).response.rect.width()
         } else {
             0.
         };
+
+        if let Some((keyboard, wait_for)) = &mut self.ui.keyboard {
+            let mut open = true;
+            egui::Window::new("Keyboard layout")
+                .open(&mut open)
+                .show(ctx, |ui| {
+                    egui::Grid::new("kb_grid").show(ui, |ui| {
+                        for (idx, (name, field)) in [
+                            ("left", &mut keyboard.left),
+                            ("right", &mut keyboard.right),
+                            ("rotate_left", &mut keyboard.rotate_left),
+                            ("rotate_right", &mut keyboard.rotate_right),
+                            ("rotate_180", &mut keyboard.rotate_180),
+                            ("hard_drop", &mut keyboard.hard_drop),
+                            ("soft_drop", &mut keyboard.soft_drop),
+                            ("hold", &mut keyboard.hold),
+                        ].into_iter().enumerate() {
+                            ui.label(name);
+                            // if this key is currently waiting for input,
+                            let label = if wait_for.map(|wf| wf == idx).unwrap_or(false) {
+                                // also check for inputs
+                                if let Some(key) = self.keys_pressed.iter().next() {
+                                    *wait_for = None;
+                                    *field = *key;
+                                }
+
+                                "Press a key".to_string()
+                            } else {
+                                format!("{field:?}")
+                            };
+
+                            if ui.button(label).clicked() {
+                                *wait_for = Some(idx);
+                            };
+                            ui.end_row();
+                        }
+                    });
+                    ui.label("Close to apply");
+                });
+
+            if !open {
+                let (kb, _) = self.ui.keyboard.take().unwrap();
+                self.game.input = Box::new(UserInput {
+                    keyboard: kb,
+                    ..Default::default()
+                })
+            }
+        }
 
         self.ui_occupation = (header_height, sidebar_width);
     }
@@ -204,16 +275,14 @@ impl Model {
 
         Self {
             egui,
-            ui: Ui {
-                settings_open: false
-            },
+            ui: Ui::default(),
             keys_pressed: HashSet::new(),
             game: SingleplayerGame::new(texture, Box::new(settings.input.clone())),
             gilrs,
             gamepad,
             ui_occupation: (0.0, 0.0),
             last_tick: Duration::from_secs(0),
-            settings
+            settings,
         }
     }
 }
