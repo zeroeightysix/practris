@@ -22,7 +22,7 @@ pub struct Model {
     gilrs: Gilrs,
     gamepad: Option<GamepadId>,
     ui_occupation: (f32, f32),
-    last_tick: Duration,
+    since_last_tick: Duration,
     settings: UserSettings,
 }
 
@@ -40,6 +40,12 @@ impl Default for Ui {
     }
 }
 
+impl Ui {
+    pub fn is_paused(&self) -> bool {
+        self.settings_open || self.keyboard.is_some()
+    }
+}
+
 impl Model {
     /// Process a game tick, which processes inputs once, decreases timers, etc.
     /// In a correctly timed environment, this is done exactly 60 times per second.
@@ -54,20 +60,24 @@ impl Model {
     ///
     /// Ticks may not happen when the game is rendered above 60 fps, where some frames will be rendered without a game tick being processed.
     pub fn update(&mut self, update: Update) {
-        // how many ticks should have passed since the last tick?
-        const TICK_STRIDE: f32 = 1000. / 60.;
-        let diff = (update.since_start - self.last_tick).as_millis();
-        let pass = diff as f32 / TICK_STRIDE; // cast is okay: overflow only if you left practris open for longer than you or your children will live
-        if pass >= 60. * 10. {
-            // the game hasn't seen a tick update in over 10s: let's not care and skip time.
-            log::info!("Skipping ticks as the game is lagging behind for >10s");
-            self.last_tick = update.since_start;
-        } else if pass >= 1. {
-            let to_process = pass as usize;
-            self.last_tick = self.last_tick + Duration::from_millis((to_process as f32 * TICK_STRIDE) as u64);
-            for _ in 0..to_process {
-                self.tick();
+        if !self.ui.is_paused() {
+            // how many ticks should have passed since the last tick?
+            const TICK_STRIDE: f32 = 1000. / 60.;
+            let diff = (update.since_start - self.since_last_tick).as_millis();
+            let pass = diff as f32 / TICK_STRIDE; // cast is okay: overflow only if you left practris open for longer than you or your children will live
+            if pass >= 60. * 10. {
+                // the game hasn't seen a tick update in over 10s: let's not care and skip time.
+                log::info!("Skipping ticks as the game is lagging behind for >10s");
+                self.since_last_tick = update.since_start;
+            } else if pass >= 1. {
+                let to_process = pass as usize;
+                self.since_last_tick = self.since_last_tick + Duration::from_millis((to_process as f32 * TICK_STRIDE) as u64);
+                for _ in 0..to_process {
+                    self.tick();
+                }
             }
+        } else {
+            self.since_last_tick = update.since_start;
         }
 
         self.egui.set_elapsed_time(update.since_start);
@@ -281,7 +291,7 @@ impl Model {
             gilrs,
             gamepad,
             ui_occupation: (0.0, 0.0),
-            last_tick: Duration::from_secs(0),
+            since_last_tick: Duration::from_secs(0),
             settings,
         }
     }
