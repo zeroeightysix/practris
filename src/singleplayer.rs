@@ -10,12 +10,16 @@ use crate::ui::SingleplayerGameUi;
 use crate::input::InputSource;
 use crate::wgpu::Texture;
 
+const RESET_TIME: usize = 40;
+
 pub struct SingleplayerGame {
     ui: SingleplayerGameUi,
+    texture: Texture,
     game: Game,
     pub(crate) input: Box<dyn InputSource>,
     pub state: State,
-    rng: Pcg64Mcg
+    rng: Pcg64Mcg,
+    reset_countdown: f32,
 }
 
 #[derive(Debug)]
@@ -29,15 +33,16 @@ impl SingleplayerGame {
     pub fn new(texture: Texture, input: Box<dyn InputSource>) -> Self {
         let seed = thread_rng().gen();
         let mut rng = Pcg64Mcg::from_seed(seed);
-
         let game = Game::new(GameConfig::fast_config(), &mut rng);
 
         Self {
-            ui: SingleplayerGameUi::new(&game, "amogus".to_string(), texture),
+            ui: SingleplayerGameUi::new(&game, "amogus".to_string(), texture.clone()),
+            texture,
             game,
             input,
             state: State::Starting(300),
-            rng
+            rng,
+            reset_countdown: 1.,
         }
     }
 }
@@ -85,9 +90,33 @@ impl crate::State for SingleplayerGame {
 
             self.ui.update(update);
         }
+
+        let actions = self.input.actions(keys, gamepad);
+        if actions.reset {
+            match self.reset_countdown {
+                x if x <= 0. => {
+                    self.reset_countdown = 1.;
+
+                    let seed = thread_rng().gen();
+                    let mut rng = Pcg64Mcg::from_seed(seed);
+                    let game = Game::new(GameConfig::fast_config(), &mut rng);
+                    self.ui = SingleplayerGameUi::new(&game, "amogus".to_string(), self.texture.clone());
+                    self.game = game;
+                    self.state = State::Playing;
+                },
+                _ => self.reset_countdown -= 1. / RESET_TIME as f32,
+            }
+        } else {
+            self.reset_countdown = 1.;
+        }
     }
 
     fn render(&self, draw: &Draw, rect: Rect) {
         self.ui.draw(draw, rect);
+
+        let reset_rect = Rect::from_wh(Vec2::new(rect.w() * (1. - self.reset_countdown), 10.));
+        let reset_rect = reset_rect.bottom_left_of(rect);
+        draw.a::<nannou::draw::primitive::Rect>(reset_rect.into())
+            .color(RED);
     }
 }

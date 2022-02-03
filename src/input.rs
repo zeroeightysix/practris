@@ -8,12 +8,17 @@ use crate::game::Event;
 
 pub trait InputSource {
     fn controller(&self, keys: &HashSet<Key>, gamepad: Option<Gamepad<'_>>) -> Controller;
+    fn actions(&self, keys: &HashSet<Key>, gamepad: Option<Gamepad<'_>>) -> GameAction;
     fn update(
         &mut self,
         board: &Board<ColoredRow>,
         events: &[Event],
         incoming: u32,
     );
+}
+
+pub struct GameAction {
+    pub reset: bool
 }
 
 #[derive(Copy, Clone, Serialize, Deserialize, Default, Debug)]
@@ -32,6 +37,7 @@ pub(crate) struct Config<T> {
     pub(crate) hard_drop: T,
     pub(crate) soft_drop: T,
     pub(crate) hold: T,
+    pub(crate) reset: T,
 }
 
 impl Default for Config<Key> {
@@ -45,6 +51,7 @@ impl Default for Config<Key> {
             hard_drop: Key::Space,
             soft_drop: Key::Down,
             hold: Key::C,
+            reset: Key::R,
         }
     }
 }
@@ -60,6 +67,7 @@ impl Default for Config<GamepadControl> {
             hard_drop: GamepadControl::Button(Button::DPadUp),
             soft_drop: GamepadControl::Button(Button::DPadDown),
             hold: GamepadControl::Button(Button::LeftTrigger),
+            reset: GamepadControl::Button(Button::West),
         }
     }
 }
@@ -100,6 +108,17 @@ impl InputSource for UserInput {
                 self.gamepad.soft_drop,
             ),
             hold: self.read_input(keys, gamepad, self.keyboard.hold, self.gamepad.hold),
+        }
+    }
+
+    fn actions(&self, keys: &HashSet<Key>, gamepad: Option<Gamepad<'_>>) -> GameAction {
+        GameAction {
+            reset: self.read_input(
+                keys,
+                gamepad,
+                self.keyboard.reset,
+                self.gamepad.reset,
+            )
         }
     }
 
