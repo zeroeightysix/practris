@@ -198,7 +198,7 @@ impl GameDrawState {
         };
 
         let board = &self.board;
-        for y in 0..VIS_BOARD {
+        for y in 0..VIS_BOARD+3 {
             let row = board[y];
             for x in 0..10 {
                 let color = row.cell_color(x);
