@@ -114,9 +114,17 @@ impl crate::State for SingleplayerGame {
     fn render(&self, draw: &Draw, rect: Rect) {
         self.ui.draw(draw, rect);
 
-        let reset_rect = Rect::from_wh(Vec2::new(rect.w() * (1. - self.reset_countdown), 10.));
-        let reset_rect = reset_rect.bottom_left_of(rect);
-        draw.a::<nannou::draw::primitive::Rect>(reset_rect.into())
-            .color(RED);
+        // To make the reset button feel slightly more 'tactile' - as in, not just a looping value,
+        // we introduce a percentage (20%) of the time the reset bind is pressed, that no visual
+        // indicator is shown.
+        // This also means that after a reset happens, the bar doesn't immediately start filling in
+        // again, which also improves the feel of this function
+        const RESET_IDLE: f32 = 0.8;
+        if self.reset_countdown < RESET_IDLE {
+            let reset_rect = Rect::from_wh(Vec2::new(rect.w() * (1. - self.reset_countdown / RESET_IDLE), 10.));
+            let reset_rect = reset_rect.bottom_left_of(rect);
+            draw.a::<nannou::draw::primitive::Rect>(reset_rect.into())
+                .color(RED);
+        }
     }
 }
