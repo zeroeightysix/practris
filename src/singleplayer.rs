@@ -18,7 +18,8 @@ pub struct SingleplayerGame {
     game: Game,
     pub(crate) input: Box<dyn InputSource>,
     pub state: State,
-    rng: Pcg64Mcg,
+    piece_rng: Pcg64Mcg,
+    garbage_rng: Pcg64Mcg,
     reset_countdown: f32,
 }
 
@@ -31,8 +32,9 @@ pub enum State {
 
 impl SingleplayerGame {
     pub fn new(texture: Texture, input: Box<dyn InputSource>) -> Self {
-        let seed = thread_rng().gen();
-        let mut rng = Pcg64Mcg::from_seed(seed);
+        let mut thread_rng = thread_rng();
+        let mut rng = Pcg64Mcg::from_seed(thread_rng.gen());
+        let mut garbage_rng = Pcg64Mcg::from_seed(thread_rng.gen());
         let game = Game::new(GameConfig::fast_config(), &mut rng);
 
         Self {
@@ -41,7 +43,8 @@ impl SingleplayerGame {
             game,
             input,
             state: State::Starting(300),
-            rng,
+            piece_rng: rng,
+            garbage_rng,
             reset_countdown: 1.,
         }
     }
@@ -70,7 +73,7 @@ impl crate::State for SingleplayerGame {
 
         if do_update {
             let controller = self.input.controller(keys, gamepad);
-            let events = self.game.update(controller, &mut self.rng.clone(), &mut self.rng);
+            let events = self.game.update(controller, &mut self.piece_rng, &mut self.garbage_rng);
             let update = PlayerUpdate {
                 events,
                 garbage_queue: 0
@@ -103,7 +106,7 @@ impl crate::State for SingleplayerGame {
                     self.ui = SingleplayerGameUi::new(&game, "amogus".to_string(), self.texture.clone());
                     self.game = game;
                     self.state = State::Playing;
-                    self.rng = rng;
+                    self.piece_rng = rng;
                 },
                 _ => self.reset_countdown -= 1. / RESET_TIME as f32,
             }
