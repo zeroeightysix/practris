@@ -103,6 +103,7 @@ impl crate::State for SingleplayerGame {
                     self.ui = SingleplayerGameUi::new(&game, "amogus".to_string(), self.texture.clone());
                     self.game = game;
                     self.state = State::Playing;
+                    self.rng = rng;
                 },
                 _ => self.reset_countdown -= 1. / RESET_TIME as f32,
             }
