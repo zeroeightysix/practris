@@ -1195,7 +1195,7 @@ dependencies = [
 [[package]]
 name = "libtetris"
 version = "0.1.0"
-source = "git+https://github.com/MinusKelvin/cold-clear#279edd7c3177ff8077f6a930193397814b281f27"
+source = "git+https://github.com/zeroeightysix/cold-clear#bc9e04f1610586077d75e24e6540158ce12d27cb"
 dependencies = [
  "arrayvec 0.5.2",
  "enum-map",
